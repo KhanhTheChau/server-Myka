@@ -1,0 +1,8 @@
+websockets
+SpeechRecognition
+google-generativeai
+edge-tts
+python-dotenv
+
+aiohttp[speedups]
+imageio-ffmpeg
