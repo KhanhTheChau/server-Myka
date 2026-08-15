@@ -168,6 +168,10 @@ class WhatsAppNotifier:
         if not self.token or not self.phone_number_id:
             logging.warning("No WhatsApp configuration found. WhatsApp Webhook is disabled.")
             return
+            
+        from core.config import Config
+        host = Config.get_host()
+        port = Config.get_webhook_port()
 
         app = web.Application()
         app.router.add_get('/webhook', self.verify_webhook)
@@ -175,9 +179,9 @@ class WhatsAppNotifier:
 
         runner = web.AppRunner(app)
         await runner.setup()
-        site = web.TCPSite(runner, '0.0.0.0', 5001)
+        site = web.TCPSite(runner, host, port)
         
-        logging.info("WhatsApp Webhook đang chạy tại http://0.0.0.0:5001/webhook")
+        logging.info(f"WhatsApp Webhook đang chạy tại http://{host}:{port}/webhook")
         await site.start()
         
         # Giữ server chạy ngầm

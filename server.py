@@ -2,10 +2,9 @@ import asyncio
 import sys
 import logging
 import websockets
-from dotenv import load_dotenv
+from core.config import Config
 
-load_dotenv()
-
+Config.load_environment()
 from core.stt_engine import STTEngine
 from core.llm_engine import LLMEngine
 from core.tts_engine import TTSEngine
@@ -14,8 +13,8 @@ from core.client_session import ClientSession
 from core.telegram_notifier import TelegramNotifier
 from core.whatsapp_notifier import WhatsAppNotifier
 
-# Thiết lập logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - [%(levelname)s] - %(message)s')
+# Thiết lập logging động theo môi trường
+logging.basicConfig(level=Config.get_log_level(), format='%(asctime)s - [%(levelname)s] - %(message)s')
 
 if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
@@ -32,8 +31,11 @@ async def handle_client(websocket):
     logging.info("[SERVER] Đóng session ESP32.")
 
 async def main():
+    host = Config.get_host()
+    ws_port = Config.get_ws_port()
+    
     logging.info('==================================================')
-    logging.info(' SERVER WEBSOCKET AI ĐÃ SẴN SÀNG (Port 5000)')
+    logging.info(f' SERVER WEBSOCKET AI ĐÃ SẴN SÀNG (Port {ws_port}) - Môi trường: {Config.APP_ENV}')
     logging.info('==================================================')
     
     # Pre-generate audio cho Phrase Manager
@@ -46,7 +48,7 @@ async def main():
     whatsapp_bot = WhatsAppNotifier()
     asyncio.create_task(whatsapp_bot.start_server())
     
-    async with websockets.serve(handle_client, "0.0.0.0", 5000, ping_interval=None):
+    async with websockets.serve(handle_client, host, ws_port, ping_interval=None):
         await asyncio.Future()
 
 if __name__ == '__main__':
