@@ -43,11 +43,16 @@ class TelegramNotifier:
             for idx, src in enumerate(sources_list):
                 if isinstance(src, dict):
                     title = src.get("title") or src.get("file_name") or src.get("name") or src.get("document_name") or f"Nguồn {idx+1}"
+                    import urllib.parse
+                    title = urllib.parse.unquote(title)
+                    page = src.get("page")
+                    page_info = f" (Trang {page + 1})" if page is not None else ""
+                    
                     url = src.get("url")
                     if url:
-                        source_text += f"- <a href='{url}'>{title}</a>\n"
+                        source_text += f"- <a href='{url}'>{title}{page_info}</a>\n"
                     else:
-                        source_text += f"- {title}\n"
+                        source_text += f"- {title}{page_info}\n"
                 elif isinstance(src, str):
                     source_text += f"- {src}\n"
         
@@ -73,11 +78,16 @@ class TelegramNotifier:
             for idx, src in enumerate(sources_list):
                 if isinstance(src, dict):
                     title = src.get("title") or src.get("file_name") or src.get("name") or src.get("document_name") or f"Nguồn {idx+1}"
+                    import urllib.parse
+                    title = urllib.parse.unquote(title)
+                    page = src.get("page")
+                    page_info = f" (Trang {page + 1})" if page is not None else ""
+                    
                     url = src.get("url")
                     if url:
-                        source_text += f"- <a href='{url}'>{title}</a>\n"
+                        source_text += f"- <a href='{url}'>{title}{page_info}</a>\n"
                     else:
-                        source_text += f"- {title}\n"
+                        source_text += f"- {title}{page_info}\n"
         return source_text
 
     async def start_polling(self):
