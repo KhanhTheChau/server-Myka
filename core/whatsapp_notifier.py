@@ -120,8 +120,14 @@ class WhatsAppNotifier:
         # Chuyển history nội bộ sang định dạng RAG
         rag_history = [{"role": msg["role"], "content": msg["content"]} for msg in self.chat_history[sender_phone]]
 
+        # Làm sạch câu hỏi
+        import re
+        clean_query = re.sub(r'(?i)\bmyka\b', '', text).strip()
+        if not clean_query:
+            clean_query = text
+
         # 1. Tra cứu RAG
-        rag_data = await self.rag.query(text, chat_history=rag_history)
+        rag_data = await self.rag.query(clean_query, chat_history=rag_history)
         rag_info = None
         has_rag_answer = False
 
@@ -135,12 +141,7 @@ class WhatsAppNotifier:
         
         if has_rag_answer:
             rag_answer = rag_info.get("answer")
-            llm_prompt = f"Ngữ cảnh trò chuyện trước đó:\n{history_text}\n\n" if history_text else ""
-            llm_prompt += f"Dựa vào thông tin sau đây từ cơ sở dữ liệu nội bộ công ty:\n{rag_answer}\n\n"
-            llm_prompt += f"Người hỏi tên là {sender_name} trên WhatsApp.\n"
-            llm_prompt += f"Câu hỏi hiện tại: {text}\n"
-            
-            ai_response, _ = await self.llm.generate_response(llm_prompt)
+            ai_response = f"Dạ thưa ngoại {sender_name},\n\n{rag_answer}"
             
             # Gắn thêm minh chứng
             sources_text = self.extract_sources_text(rag_info)

@@ -100,6 +100,17 @@ class TelegramNotifier:
         url = f"https://api.telegram.org/bot{self.bot_token}/getUpdates"
 
         async with aiohttp.ClientSession() as session:
+            # Lấy offset mới nhất để bỏ qua các tin nhắn cũ tồn đọng khi restart server
+            try:
+                async with session.get(url, params={"timeout": 1}) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        updates = data.get("result", [])
+                        if updates:
+                            offset = updates[-1]["update_id"] + 1
+            except Exception as e:
+                logging.warning(f"Không thể clear tin nhắn cũ: {e}")
+
             while True:
                 params = {"timeout": 30}
                 if offset:
@@ -147,8 +158,14 @@ class TelegramNotifier:
         # Chuyển history nội bộ sang định dạng RAG
         rag_history = [{"role": msg["role"], "content": msg["content"]} for msg in self.chat_history[chat_id]]
 
+        # Làm sạch câu hỏi (bỏ từ khóa Myka để RAG tìm kiếm chính xác hơn)
+        import re
+        clean_query = re.sub(r'(?i)\bmyka\b', '', text).strip()
+        if not clean_query:
+            clean_query = text  # Fallback nếu câu chỉ có mỗi chữ myka
+
         # 1. Tra cứu RAG kèm History
-        rag_data = await self.rag.query(text, chat_history=rag_history)
+        rag_data = await self.rag.query(clean_query, chat_history=rag_history)
         rag_info = None
         has_rag_answer = False
 
@@ -163,12 +180,7 @@ class TelegramNotifier:
         
         if has_rag_answer:
             rag_answer = rag_info.get("answer")
-            llm_prompt = f"Ngữ cảnh trò chuyện trước đó:\n{history_text}\n\n" if history_text else ""
-            llm_prompt += f"Dựa vào thông tin sau đây từ cơ sở dữ liệu nội bộ công ty:\n{rag_answer}\n\n"
-            llm_prompt += f"Người hỏi tên là {sender_name} trên Telegram.\n"
-            llm_prompt += f"Câu hỏi hiện tại: {text}\n"
-            
-            ai_response, _ = await self.llm.generate_response(llm_prompt)
+            ai_response = f"Dạ thưa ngoại {sender_name},\n\n{rag_answer}"
             
             # Gắn thêm minh chứng
             sources_text = self.extract_sources_text(rag_info)
