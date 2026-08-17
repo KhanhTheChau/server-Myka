@@ -141,7 +141,7 @@ class WhatsAppNotifier:
         
         if has_rag_answer:
             rag_answer = rag_info.get("answer")
-            ai_response = f"Dạ thưa {sender_name},\n\n{rag_answer}"
+            ai_response = f"Dạ thưa Bác {sender_name},\n\n{rag_answer}"
             
             # Gắn thêm minh chứng
             sources_text = self.extract_sources_text(rag_info)
